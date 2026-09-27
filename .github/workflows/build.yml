@@ -18,8 +18,6 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: android-actions/setup-android@v3
-
       - name: Unzip project
         run: unzip -o ZionBibleVerse-Android.zip
 
