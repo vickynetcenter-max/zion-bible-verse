@@ -21,16 +21,28 @@ jobs:
       - name: Unzip project
         run: unzip -o ZionBibleVerse-Android.zip
 
-      - name: Build APK
+      # Permanent signing key from repository secrets, so each build installs as an update.
+      - name: Restore signing key
+        run: echo "${{ secrets.ZION_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/zion-release.jks"
+
+      - name: Build both apps (members + admin)
         working-directory: ZionBibleVerse
+        env:
+          ZION_KEYSTORE: ${{ runner.temp }}/zion-release.jks
+          ZION_KEYSTORE_PASSWORD: ${{ secrets.ZION_KEYSTORE_PASSWORD }}
+          ZION_KEY_ALIAS: zion
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
-          cp app/build/outputs/apk/release/app-release.apk ../ZionBibleVerse.apk
+          ./gradlew assembleUserRelease assembleAdminRelease --no-daemon
+          cp app/build/outputs/apk/user/release/app-user-release.apk ../ZionBibleVerse.apk
+          cp app/build/outputs/apk/admin/release/app-admin-release.apk ../ZionAdmin.apk
 
+      # ZionBibleVerse.apk keeps the same name, so the printed QR code keeps working.
       - name: Publish download
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: Zion Bible Verse (build ${{ github.run_number }})
-          files: ZionBibleVerse.apk
+          files: |
+            ZionBibleVerse.apk
+            ZionAdmin.apk
