@@ -37,6 +37,23 @@ jobs:
           cp app/build/outputs/apk/user/release/app-user-release.apk ../ZionBibleVerse.apk
           cp app/build/outputs/apk/admin/release/app-admin-release.apk ../ZionAdmin.apk
 
+      # version.json lets the installed apps notice that a newer version is out.
+      - name: Version info
+        run: |
+          python3 - <<'PY'
+          import json, re
+          g = open('ZionBibleVerse/app/build.gradle.kts', encoding='utf-8').read()
+          code = int(re.search(r'versionCode = (\d+)', g).group(1))
+          name = re.search(r'versionName = "([^"]+)"', g).group(1)
+          try:
+              notes = open('ZionBibleVerse/release-notes.txt', encoding='utf-8').read().strip()
+          except FileNotFoundError:
+              notes = ''
+          json.dump({'versionCode': code, 'versionName': name, 'notes': notes},
+                    open('version.json', 'w', encoding='utf-8'), ensure_ascii=False)
+          print(code, name, notes)
+          PY
+
       # ZionBibleVerse.apk keeps the same name, so the printed QR code keeps working.
       - name: Publish download
         uses: softprops/action-gh-release@v2
@@ -46,3 +63,4 @@ jobs:
           files: |
             ZionBibleVerse.apk
             ZionAdmin.apk
+            version.json
